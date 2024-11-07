@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitoring</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('https://www.nasa.gov/sites/default/files/thumbnails/image/space_0.jpg') no-repeat center center fixed; 
+            background-size: cover; 
+            color: #fff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 50px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 3em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.6); /* Glowing text effect */
+        }
+
+        .alert {
+            color: #721c24;
+            background-color: rgba(255, 99, 71, 0.8);
+            border-color: #f5c6cb;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .gauge-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding-bottom: 20px;
+        }
+
+        .plotly-graph-div {
+            width: 100%;
+            max-width: 500px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+            transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Hover Effect */
+        .plotly-graph-div:hover {
+            transform: scale(1.05); /* Slightly enlarges on hover */
+            background-color: rgba(0, 0, 0, 0.9); /* Darkens the background */
+            box-shadow: 0 6px 12px rgba(255, 255, 255, 0.3); /* Adds a brighter shadow */
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #4e73df;
+            color: white;
+            border-radius: 8px;
+            font-size: 1.1em;
+        }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            .gauge-container {
+                flex-direction: row;
+                justify-content: space-evenly;
+            }
+
+            .plotly-graph-div {
+                width: 45%;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .gauge-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .plotly-graph-div {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>System Monitoring Dashboard</h1>
+
+        <div class="gauge-container">
+            <div id="cpu-gauge" class="plotly-graph-div"></div>
+            <div id="mem-gauge" class="plotly-graph-div"></div>
+        </div>
+
+        <div id="dynamic-alerts"></div>
+    </div>
+
+    <div class="footer">
+        <p>Real-Time Monitoring of CPU and Memory Utilization</p>
+        <p>Powered by Flask & Plotly</p>
+    </div>
+
+    <script>
+        var cpuMetric = {{ cpu_metric }};
+        var memMetric = {{ mem_metric }};
+        
+        var cpuGauge = {
+            type: "indicator",
+            mode: "gauge+number",
+            value: cpuMetric,
+            gauge: {
+                axis: { range: [null, 100] },
+                bar: { color: "#1f77b4" },
+                bgcolor: "white",
+                borderwidth: 2,
+                bordercolor: "#ccc",
+                steps: [
+                    { range: [0, 50], color: "#d9f0a3" },
+                    { range: [50, 85], color: "#ffeb84" },
+                    { range: [85, 100], color: "#ff5f5f" }
+                ],
+                threshold: {
+                    line: { color: "red", width: 4 },
+                    thickness: 0.75,
+                    value: cpuMetric
+                }
+            }
+        };
+
+        var memGauge = {
+            type: "indicator",
+            mode: "gauge+number",
+            value: memMetric,
+            gauge: {
+                axis: { range: [null, 100] },
+                bar: { color: "#1f77b4" },
+                bgcolor: "white",
+                borderwidth: 2,
+                bordercolor: "#ccc",
+                steps: [
+                    { range: [0, 50], color: "#d9f0a3" },
+                    { range: [50, 85], color: "#ffeb84" },
+                    { range: [85, 100], color: "#ff5f5f" }
+                ],
+                threshold: {
+                    line: { color: "red", width: 4 },
+                    thickness: 0.75,
+                    value: memMetric
+                }
+            }
+        };
+
+        var cpuGaugeLayout = {
+            title: "CPU Utilization",
+            height: 400,
+            width: 500,
+            margin: { t: 50, b: 50 },
+            font: { size: 18 }
+        };
+
+        var memGaugeLayout = {
+            title: "Memory Utilization",
+            height: 400,
+            width: 500,
+            margin: { t: 50, b: 50 },
+            font: { size: 18 }
+        };
+
+        Plotly.newPlot('cpu-gauge', [cpuGauge], cpuGaugeLayout);
+        Plotly.newPlot('mem-gauge', [memGauge], memGaugeLayout);
+
+        function updateMetrics() {
+            cpuMetric = Math.random() * 100;
+            memMetric = Math.random() * 100;
+
+            Plotly.react('cpu-gauge', [{
+                ...cpuGauge,
+                value: cpuMetric,
+                gauge: { ...cpuGauge.gauge, threshold: { value: cpuMetric } }
+            }]);
+
+            Plotly.react('mem-gauge', [{
+                ...memGauge,
+                value: memMetric,
+                gauge: { ...memGauge.gauge, threshold: { value: memMetric } }
+            }]);
+
+            checkForAlerts();
+        }
+
+        function checkForAlerts() {
+            var alertContainer = document.getElementById("dynamic-alerts");
+            alertContainer.innerHTML = ''; 
+
+            if (cpuMetric > 85) {
+                alertContainer.innerHTML += `<div class="alert">Warning: High CPU usage! ${cpuMetric.toFixed(2)}%</div>`;
+            }
+
+            if (memMetric > 85) {
+                alertContainer.innerHTML += `<div class="alert">Warning: High Memory usage! ${memMetric.toFixed(2)}%</div>`;
+            }
+        }
+
+        setInterval(updateMetrics, 5000);
+    </script>
+</body>
+</html>
